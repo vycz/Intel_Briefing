@@ -379,7 +379,12 @@ def generate_report(intel: dict, date_str: str) -> str:
     lines.append("> Hacker News + GitHub Trending + TechCrunch\n")
     
     if intel.get("tech_trends"):
-        for i, item in enumerate(intel["tech_trends"][:15], 1):
+        # Split by source to ensure each gets representation
+        hn_gh_items = [x for x in intel["tech_trends"] if x.get("category") in ("Hacker News", "GitHub")]
+        tc_items = [x for x in intel["tech_trends"] if x.get("category") == "TechCrunch"]
+        # Interleave: 10 HN/GitHub + up to 5 TechCrunch
+        merged = hn_gh_items[:10] + tc_items[:5]
+        for i, item in enumerate(merged, 1):
             title = item.get("title", "Untitled")
             url = item.get("url", "#")
             heat = item.get("heat", "")
@@ -532,7 +537,12 @@ def generate_report(intel: dict, date_str: str) -> str:
     lines.append("> HN Top Blogs + MIT Technology Review — 精选深度分析\n")
     
     if intel.get("insights"):
-        for i, item in enumerate(intel["insights"][:10], 1):
+        # Split by source to ensure MIT TR gets representation
+        hn_blog_items = [x for x in intel["insights"] if x.get("source") == "HN Top Blogs"]
+        mit_items = [x for x in intel["insights"] if x.get("source") == "MIT Technology Review"]
+        # Merge: 5 HN Blogs + 3 MIT TR
+        merged_insights = hn_blog_items[:5] + mit_items[:3]
+        for i, item in enumerate(merged_insights, 1):
             title = item.get("title", "Untitled")
             url = item.get("url", "#")
             author = item.get("author", "")
