@@ -85,6 +85,13 @@ except ImportError:
     MIT_TR_AVAILABLE = False
     print("[WARN] MIT Technology Review sensor not available, skipping.")
 
+try:
+    from sensors.moltbook_api import fetch_moltbook_hot
+    MOLTBOOK_AVAILABLE = True
+except ImportError:
+    MOLTBOOK_AVAILABLE = False
+    print("[WARN] Moltbook sensor not available, skipping.")
+
 # --- Gemini Translator ---
 try:
     from utils.gemini_translator import translate_to_chinese, summarize_blog_article
@@ -160,7 +167,8 @@ def fetch_all_sources(limit_per_source: int = 10) -> dict:
         "research": [],         # ArXiv
         "social": [],           # X (Twitter)
         "xhs_directives": [],   # XHS (manual search links)
-        "insights": []          # HN Top Blogs (深度洞察)
+        "insights": [],         # HN Top Blogs (深度洞察)
+        "agent_ecosystem": []   # Moltbook (Agent 生态)
     }
     
     # ========== EXTERNAL SOURCES (news-aggregator-skill) ==========
@@ -358,6 +366,26 @@ Keep it concise but informative. If no data found, say "暂无X平台讨论数�
                 })
         except Exception as e:
             print(f"  [WARN] MIT Technology Review failed: {e}")
+
+    # ========== MOLTBOOK (AGENT ECOSYSTEM) ==========
+    if MOLTBOOK_AVAILABLE:
+        print("[*] Fetching Moltbook Agent Ecosystem...")
+        try:
+            moltbook_posts = fetch_moltbook_hot(limit=10)
+            for p in moltbook_posts:
+                intel["agent_ecosystem"].append({
+                    "source": "Moltbook",
+                    "category": "Moltbook",
+                    "title": p.title,
+                    "url": p.url,
+                    "heat": p.heat,
+                    "time": p.time,
+                    "submolt": p.submolt,
+                    "author": p.author,
+                    "detail": p.content_preview
+                })
+        except Exception as e:
+            print(f"  [WARN] Moltbook failed: {e}")
     
     return intel
 
@@ -368,7 +396,7 @@ def generate_report(intel: dict, date_str: str) -> str:
         f"# 🌐 全球情报日报 (Global Intel Briefing)",
         f"**日期:** {date_str}",
         f"**生成时间:** {datetime.now().strftime('%H:%M')}",
-        f"**数据源:** HN, GitHub, 36Kr, WallStreetCN, V2EX, PH, ArXiv, X, XHS, TechCrunch, MIT TR",
+        f"**数据源:** HN, GitHub, 36Kr, WallStreetCN, V2EX, PH, ArXiv, X, XHS, TechCrunch, MIT TR, Moltbook",
         "",
         "---",
         ""
@@ -592,6 +620,31 @@ def generate_report(intel: dict, date_str: str) -> str:
     else:
         lines.append("*暂无数据 (HN Blogs 传感器不可用)*\n")
     
+    # --- Agent Ecosystem (Experimental) ---
+    lines.append("## 🤖 Agent 生态 (Agent Ecosystem)")
+    lines.append("> 🧪 实验性栏目 — Moltbook AI Agent 社交平台热帖\n")
+    
+    agent_items = intel.get("agent_ecosystem", [])
+    if agent_items:
+        lines.append("Moltbook\n")
+        for i, item in enumerate(agent_items[:10], 1):
+            title = item.get("title", "Untitled")
+            url = item.get("url", "")
+            heat = item.get("heat", "")
+            time_str = item.get("time", "")
+            submolt = item.get("submolt", "")
+            author = item.get("author", "Agent")
+            detail = item.get("detail", "")
+            
+            lines.append(f"### {i}. [{title}]({url})")
+            if detail:
+                lines.append(f"> ⚡ {detail[:100]}")
+            lines.append(f"📍 Moltbook | 🔥 {heat} | 📁 m/{submolt}")
+            lines.append(f"🤖 {author}{' | 🕒 ' + time_str if time_str else ''}")
+            lines.append("")
+    else:
+        lines.append("*暂无数据 (Moltbook 传感器不可用或无热帖)*\n")
+    
     lines.append("---")
     lines.append("*报告由 Unified Intelligence Engine V2 自动生成*")
     
@@ -612,7 +665,7 @@ def main():
     print(f"\n{'='*50}")
     print(f"  Unified Intelligence Fetcher V2")
     print(f"  Date: {date_str} | Limit: {limit}/source")
-    print(f"  Sources: HN, GitHub, 36Kr, WS, V2EX, PH, ArXiv, X, XHS, TC, MIT-TR")
+    print(f"  Sources: HN, GitHub, 36Kr, WS, V2EX, PH, ArXiv, X, XHS, TC, MIT-TR, Moltbook")
     print(f"{'='*50}\n")
     
     # Fetch
