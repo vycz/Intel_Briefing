@@ -113,11 +113,62 @@ except ImportError:
     print("[WARN] Link verifier not available, skipping hallucination checks.")
 
 
+def sanitize_hallucination_markers(markdown_content: str) -> str:
+    """
+    Phase 0 Fix 3: 检测并移除 Grok 自标的幻觉内容。
+    Grok 有时知道自己在编，会标注「假设链接」「虚构」等。
+    匹配到的整个段落将被移除。
+    """
+    # 幻觉自标关键词（中英文）
+    hallucination_keywords = [
+        r'假设链接',
+        r'假设的',
+        r'虚构',
+        r'虚拟',
+        r'占位符',
+        r'示例链接',
+        r'hypothetical',
+        r'fictional',
+        r'placeholder',
+        r'for illustration',
+        r'illustrative example',
+        r'made-up',
+        r'fabricated',
+    ]
+    
+    pattern = '|'.join(hallucination_keywords)
+    removed_count = 0
+    
+    # 按段落（双换行分隔）处理
+    paragraphs = markdown_content.split('\n\n')
+    clean_paragraphs = []
+    
+    for para in paragraphs:
+        if re.search(pattern, para, re.IGNORECASE):
+            removed_count += 1
+            # 提取被删除段落的首行用于日志
+            first_line = para.strip().split('\n')[0][:80]
+            print(f"    🗑️ 移除自标幻觉段落: {first_line}...")
+        else:
+            clean_paragraphs.append(para)
+    
+    if removed_count > 0:
+        print(f"  [!] 共移除 {removed_count} 个自标幻觉段落")
+    
+    return '\n\n'.join(clean_paragraphs)
+
+
 def validate_grok_report(markdown_content: str) -> str:
     """
     Anti-Hallucination Layer: Extract and validate all links in Grok's output.
     Appends warning to invalid links.
+    
+    Phase 0 Fix 2: 不再跳过 x.com/twitter.com 链接，所有链接都验证。
+    Phase 0 Fix 3: 先过滤自标幻觉段落，再验证链接。
     """
+    # Fix 3: 先移除自标幻觉段落
+    markdown_content = sanitize_hallucination_markers(markdown_content)
+    
     if not VERIFIER_AVAILABLE:
         return markdown_content
     
@@ -130,12 +181,18 @@ def validate_grok_report(markdown_content: str) -> str:
     
     print(f"  [*] Validating {len(matches)} links from Grok output...")
     validated_content = markdown_content
+    invalid_count = 0
     
     for title, url in matches:
-        # Skip known-good domains that block HEAD requests
-        skip_domains = ['twitter.com', 'x.com', 'weibo.com', 'xiaohongshu.com']
+        # Fix 2: 只跳过微博/小红书等不支持 HEAD 的平台，不再跳过 X
+        skip_domains = ['weibo.com', 'xiaohongshu.com']
         if any(domain in url for domain in skip_domains):
             continue
+        
+        # X 链接验证需要减速以避免限流
+        if 'x.com' in url or 'twitter.com' in url:
+            import time
+            time.sleep(1)  # X 对高频 HEAD 请求限流
         
         is_valid = verify_link(url)
         if not is_valid:
@@ -143,11 +200,18 @@ def validate_grok_report(markdown_content: str) -> str:
             old_link = f"[{title}]({url})"
             new_link = f"[{title}]({url}) **(⚠️ 链接验证失败/404)**"
             validated_content = validated_content.replace(old_link, new_link)
+            invalid_count += 1
             print(f"    ❌ INVALID: {url}")
         else:
-            print(f"    ✅ Valid: {url[:50]}...")
+            print(f"    ✅ Valid: {url[:60]}...")
+    
+    if invalid_count > 0:
+        print(f"  [!] 共 {invalid_count}/{len(matches)} 个链接验证失败")
+    else:
+        print(f"  [✓] 全部 {len(matches)} 个链接验证通过")
     
     return validated_content
+
 
 
 def fetch_all_sources(limit_per_source: int = 10) -> dict:

@@ -56,6 +56,11 @@ def fetch_grok_intel(query: str, override_prompt: str = None, timeout: int = 60,
         "X-Title": "Intel Briefing Engine"
     }
 
+    # 强制启用 Web Search 插件（无 Web Search 的 Grok 输出 100% 幻觉）
+    if not plugins:
+        plugins = [{"id": "web"}]
+        print("  [!] Web Search 未指定，已自动启用（防幻觉必备）")
+
     payload = {
         "model": MODEL_NAME,
         "messages": [
@@ -69,12 +74,9 @@ def fetch_grok_intel(query: str, override_prompt: str = None, timeout: int = 60,
             }
         ],
         "stream": False,
-        "temperature": 0.5
+        "temperature": 0.5,
+        "plugins": plugins
     }
-
-    # Add plugins (e.g., web search) if provided — OpenRouter feature
-    if plugins:
-        payload["plugins"] = plugins
 
     try:
         response = httpx.post(XAI_BASE_URL, headers=headers, json=payload, timeout=timeout)
@@ -126,6 +128,14 @@ def fetch_horizon_scan(
 - Mark evidence quality: use [VERIFIED] for claims you confirmed via browsing the source, [UNVERIFIED] for claims based only on social posts without primary source confirmation.
 - ABSOLUTE RULE: Report fewer real, verified signals rather than fabricating or guessing any. If you find only 3 high-quality signals, report 3. Never invent usernames, links, or engagement metrics.
 
+## ⛔ ANTI-FABRICATION RULES (SYSTEM ENFORCED)
+Your output will be processed by an automated verification pipeline. The following violations will cause your entire report to be DISCARDED:
+1. **NEVER use placeholder links** like `x.com/user123/status/...`, `github.com/example/repo`, or `arxiv.org/abs/0000.00000`. If you cannot find a real URL, write `[NO SOURCE FOUND]` instead.
+2. **NEVER fabricate @usernames**. Only cite real accounts you found via search. If unsure, omit the username.
+3. **NEVER use phrases like** "假设链接", "hypothetical", "fictional", "placeholder", "示例", "for illustration" to describe any link, username, or data point. Any paragraph containing such phrases will be automatically deleted by our pipeline.
+4. **NEVER invent engagement metrics** (likes, reposts, views). If metrics are unavailable, state "engagement data unavailable" instead of guessing.
+5. **Prefer fewer real sources over many fake ones.** A report with 3 verified signals is infinitely more valuable than one with 10 fabricated signals.
+
 ## 5-Step Analytical Protocol
 
 ### Step 1: Signal Sweep
@@ -148,7 +158,7 @@ Retain only signals with genuine potential for long-term, second-order effects o
 ### Step 3: Deep Analysis
 For each surviving signal, provide:
 - **Core Development**: Plain-language summary in 2-3 sentences
-- **Primary Evidence**: Cite real X posts with @username and timestamp (format: @user, YYYY-MM-DD HH:MM UTC), or link to real papers/repos/announcements. Tag each as [VERIFIED] or [UNVERIFIED].
+- **Primary Evidence**: Cite real X posts with @username and timestamp (format: @user, YYYY-MM-DD HH:MM UTC), or link to real papers/repos/announcements. Tag each as [VERIFIED] or [UNVERIFIED]. If no real source can be found, use `[NO SOURCE FOUND]`.
 - **Why Underreported**: Explain specifically why mainstream outlets have not covered this
 - **Second-Order Implications**: What paradigm shift, power redistribution, or structural change could this trigger in 6-24 months?
 - **Impact Probability**: Your estimated probability (%) of major long-term impact, with 1-sentence justification based on historical precedent or structural analysis
@@ -168,7 +178,7 @@ Provide exactly 4 recommendations using these exact label formats:
 ## Output Format
 - Use clean Markdown with ## headers for each step and ### for sub-sections.
 - Aim for 3000-5000 Chinese characters total. Be dense and informative, not verbose.
-- Every factual claim must have an inline citation link or X post reference."""
+- Every factual claim must have an inline citation link or X post reference. If you cannot provide a real link, use `[NO SOURCE FOUND]` — never fabricate."""
 
     print(f"[*] GROK HORIZON EXPANDER: Scanning X for '{focus}' ({timeframe})...")
     print(f"    This deep scan may take up to 2 minutes...")
