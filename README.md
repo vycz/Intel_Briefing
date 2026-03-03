@@ -9,7 +9,9 @@
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Powered by Antigravity](https://img.shields.io/badge/Powered%20by-Antigravity-8A2BE2)](https://github.com/google-gemini)
-[![Stars](https://img.shields.io/github/stars/77AutumN/Intel_Briefing?style=social)](https://github.com/77AutumN/Intel_Briefing)
+[![GitHub Stars](https://img.shields.io/github/stars/77AutumN/Intel_Briefing?style=social)](https://github.com/77AutumN/Intel_Briefing)
+[![G-Star](https://gitcode.com/c30c30cc/intel-briefing/star/badge.svg)](https://gitcode.com/c30c30cc/intel-briefing)
+[![AtomGit](https://img.shields.io/badge/Platform-AtomGit-blue?logo=git)](#)
 
 </div>
 
