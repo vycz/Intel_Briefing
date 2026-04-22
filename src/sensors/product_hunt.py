@@ -234,13 +234,16 @@ ONLY output the JSON array, no other text. If you cannot access Product Hunt, re
             data = json.loads(json_match.group(0))
             products = []
             for item in data[:limit]:
+                # NOTE: URL is a best-guess slug, not from PH API.
+                # Marked as unverified for downstream link-checker.
+                slug = item.get('name', '').lower().replace(' ', '-')
                 products.append(PHProduct(
                     name=item.get("name", "Unknown"),
                     tagline=item.get("tagline", ""),
-                    url=f"https://www.producthunt.com/posts/{item.get('name', '').lower().replace(' ', '-')}",
+                    url=f"https://www.producthunt.com/posts/{slug}",
                     votes_count=item.get("votes_count", 0),
-                    website=None,
-                    topics=[],
+                    website="⚠️ unverified (Grok fallback)",
+                    topics=["grok-fallback"],
                     maker_name=item.get("maker_name", "Unknown"),
                     maker_twitter=None
                 ))

@@ -15,7 +15,10 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 # Use unified config layer
-from config import cfg
+try:
+    from config import cfg
+except ImportError:
+    from src.config import cfg
 
 # Use httpx if available, fall back to requests
 try:
@@ -174,52 +177,11 @@ def print_trends(trends: list[GitHubTrend]) -> None:
         print(f"   🔗 {t.url}")
         print()
 
-def trigger_ghostwriter(trend: GitHubTrend):
-    """Invoke the Ghostwriter skill to draft an article."""
-    import subprocess
-    import tempfile
-    
-    print(f"  → ✍️ Triggering Curator (Analyst) for {trend.name}...")
-    
-    # Create temp file for readme context
-    with tempfile.NamedTemporaryFile(mode='w', delete=False, encoding='utf-8', suffix='.txt') as f:
-        f.write(trend.readme_text or "(No README)")
-        readme_path = f.name
-        
-    try:
-        # Call the Curator script
-        script_path = os.path.join(os.path.dirname(__file__), "..", "..", "..", "Generators", "Curator", "curator.py")
-        script_path = os.path.abspath(script_path)
-        
-        # Clean name for filename
-        safe_name = trend.name.replace('/', '_')
-        output_name = f"{safe_name}_briefing.md"
-        
-        cmd = [
-            sys.executable, script_path,
-            "--repo-name", trend.name,
-            "--readme", readme_path,
-            "--output", output_name
-        ]
-        
-        # Run it
-        subprocess.run(cmd, check=True)
-        
-    except Exception as e:
-        print(f"  ❌ Curator failed: {e}")
-    finally:
-        os.unlink(readme_path)
 
 if __name__ == "__main__":
     lang = sys.argv[1] if len(sys.argv) > 1 else None
     trends = fetch_trending(lang)
     if trends:
         print_trends(trends)
-        
-        # MVP: Auto-trigger for the Top 1 item
-        top_trend = trends[0]
-        print(f"\n[Commercial Agent] 🧠 Automatically analyzing top opportunity: {top_trend.name}")
-        trigger_ghostwriter(top_trend)
-        
     else:
         print("No trends found.")
