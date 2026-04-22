@@ -71,6 +71,13 @@ except ImportError:
     print("[WARN] Grok (X/Twitter) sensor not available, skipping.")
 
 try:
+    from sensors.hf_daily_papers import fetch_hf_daily_papers
+    HF_PAPERS_AVAILABLE = True
+except ImportError:
+    HF_PAPERS_AVAILABLE = False
+    print("[WARN] HF Daily Papers sensor not available, skipping.")
+
+try:
     from sensors.hn_blogs import fetch_hn_blogs
     HN_BLOGS_AVAILABLE = True
 except ImportError:
@@ -206,6 +213,19 @@ def _fetch_arxiv(limit):
         } for p in papers
     ]
 
+def _fetch_hf_papers(limit):
+    papers = fetch_hf_daily_papers(limit=limit)
+    return "HF Papers", "research", [
+        {
+            "source": "HF Daily Papers", "category": "HF Papers",
+            "title": p.title, "url": p.url,
+            "authors": ", ".join(p.authors[:2]),
+            "time": p.published,
+            "categories": ", ".join(p.categories[:2]),
+            "summary": p.summary
+        } for p in papers
+    ]
+
 def _fetch_techcrunch(limit):
     articles = fetch_techcrunch(limit=limit)
     return "TechCrunch", "tech_trends", [
@@ -287,6 +307,8 @@ def fetch_all_sources(limit_per_source: int = 10) -> dict:
     ]
     
     # Conditionally add optional sensors
+    if HF_PAPERS_AVAILABLE:
+        batch1_tasks.append(("HF Papers", _fetch_hf_papers, True))
     if ARXIV_AVAILABLE:
         batch1_tasks.append(("ArXiv", _fetch_arxiv, True))
     if TC_AVAILABLE:

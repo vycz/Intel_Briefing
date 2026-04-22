@@ -34,9 +34,20 @@ FALLBACK_FEEDS = [
 ]
 
 # Newsletter feeds — 保证每次跑批都抓取（不依赖 OPML 是否包含）
+# 2026-04-22: 新增 AI 公司官方博客 + 高价值 Newsletter，填补 AI 情报盲区
 NEWSLETTER_FEEDS = [
     {"title": "Latent Space", "rss": "https://www.latent.space/feed", "html": "https://www.latent.space"},
     {"title": "Ahead of AI", "rss": "https://magazine.sebastianraschka.com/feed", "html": "https://magazine.sebastianraschka.com"},
+    # --- AI Company Official Blogs ---
+    {"title": "OpenAI Blog", "rss": "https://openai.com/news/rss.xml", "html": "https://openai.com/news"},
+    {"title": "Google DeepMind", "rss": "https://deepmind.google/blog/rss.xml", "html": "https://deepmind.google"},
+    {"title": "Anthropic News", "rss": "https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_anthropic_news.xml", "html": "https://www.anthropic.com/news"},
+    {"title": "Anthropic Engineering", "rss": "https://raw.githubusercontent.com/Olshansk/rss-feeds/main/feeds/feed_anthropic_engineering.xml", "html": "https://www.anthropic.com/engineering"},
+    {"title": "Cloudflare Blog", "rss": "https://blog.cloudflare.com/rss", "html": "https://blog.cloudflare.com"},
+    {"title": "GitHub Blog", "rss": "https://github.blog/feed/", "html": "https://github.blog"},
+    # --- High-Value Newsletters ---
+    {"title": "ByteByteGo", "rss": "https://blog.bytebytego.com/feed", "html": "https://blog.bytebytego.com"},
+    {"title": "Last Week in AI", "rss": "https://lastweekin.ai/feed/", "html": "https://lastweekin.ai"},
 ]
 
 # Config
