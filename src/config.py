@@ -48,6 +48,17 @@ class IntelConfig:
     xai_base_url: str = "https://openrouter.ai/api/v1/chat/completions"
     xai_model: str = "x-ai/grok-4-fast"
 
+    # === Gemini Configuration ===
+    gemini_api_url: str = "https://generativelanguage.googleapis.com/v1beta/models"
+    gemini_model: str = "gemini-2.0-flash"
+    gemini_timeout: int = 60
+    gemini_max_retries: int = 3
+
+    # === Jina Reader Configuration ===
+    jina_reader_url: str = "https://r.jina.ai/"
+    jina_timeout: int = 30
+    jina_max_chars: int = 15000
+
     # === Operational Parameters ===
     fetch_timeout: int = 15
     grok_timeout: int = 120
@@ -72,6 +83,16 @@ class IntelConfig:
                 "https://openrouter.ai/api/v1/chat/completions",
             ),
             xai_model=os.getenv("XAI_MODEL", "x-ai/grok-4-fast"),
+            gemini_api_url=os.getenv(
+                "GEMINI_API_URL",
+                "https://generativelanguage.googleapis.com/v1beta/models",
+            ),
+            gemini_model=os.getenv("GEMINI_MODEL", "gemini-2.0-flash"),
+            gemini_timeout=int(os.getenv("GEMINI_TIMEOUT", "60")),
+            gemini_max_retries=int(os.getenv("GEMINI_MAX_RETRIES", "3")),
+            jina_reader_url=os.getenv("JINA_READER_URL", "https://r.jina.ai/"),
+            jina_timeout=int(os.getenv("JINA_TIMEOUT", "30")),
+            jina_max_chars=int(os.getenv("JINA_MAX_CHARS", "15000")),
             fetch_timeout=int(os.getenv("FETCH_TIMEOUT", "15")),
             grok_timeout=int(os.getenv("GROK_TIMEOUT", "120")),
             limit_per_source=int(os.getenv("LIMIT_PER_SOURCE", "10")),
@@ -95,5 +116,14 @@ class IntelConfig:
 # Singleton instance — import this everywhere
 cfg = IntelConfig.from_env()
 
-# Backward-compatible export for report_generator.py
+# Backward-compatible module-level exports
+# (used by gemini_translator.py, jina_reader.py, report_generator.py)
 GEMINI_RATE_LIMIT_DELAY = cfg.gemini_rate_limit_delay
+GEMINI_API_KEY = cfg.gemini_api_key
+GEMINI_API_URL = cfg.gemini_api_url
+GEMINI_MODEL = cfg.gemini_model
+GEMINI_TIMEOUT = cfg.gemini_timeout
+GEMINI_MAX_RETRIES = cfg.gemini_max_retries
+JINA_READER_URL = cfg.jina_reader_url
+JINA_TIMEOUT = cfg.jina_timeout
+JINA_MAX_CHARS = cfg.jina_max_chars

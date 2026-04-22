@@ -43,6 +43,9 @@ if not GEMINI_AVAILABLE:
     def summarize_blog_article(content, mode="brief"):
         return ""
 
+    def generate_brief(content, category="general"):
+        return ""
+
 
 def generate_report(intel: dict, date_str: str) -> str:
     """Generate magazine-style markdown report."""

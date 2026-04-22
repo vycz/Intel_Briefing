@@ -114,7 +114,7 @@ def generate_brief(content: str, category: str = "general") -> str:
 内容：
 {content[:3000]}"""
     
-    url = f"{GEMINI_API_URL}/{MODEL_NAME}:generateContent?key={GEMINI_API_KEY}"
+    url = f"{GEMINI_API_URL}/{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {
@@ -269,7 +269,7 @@ def generate_news_brief(title: str, content: str = "", category: str = "tech") -
 6. 直接输出摘要，不要前缀。"""
         max_tokens = 256
     
-    url = f"{GEMINI_API_URL}/{MODEL_NAME}:generateContent?key={GEMINI_API_KEY}"
+    url = f"{GEMINI_API_URL}/{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {
@@ -322,7 +322,7 @@ def expand_product_tagline(name: str, tagline: str) -> str:
 
 请用一句自然中文描述这个产品的定位和卖点（30-60字）。直接输出，不要前缀。"""
     
-    url = f"{GEMINI_API_URL}/{MODEL_NAME}:generateContent?key={GEMINI_API_KEY}"
+    url = f"{GEMINI_API_URL}/{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {
