@@ -30,7 +30,7 @@ jobs:
           XAI_MODEL: x-ai/grok-4-fast
           PRODUCTHUNT_TOKEN: ${{ secrets.PRODUCTHUNT_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: python run_mission.py
+        run: python cli.py
 
       - name: Deliver report to PWA
         env:

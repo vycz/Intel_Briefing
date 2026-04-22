@@ -53,6 +53,7 @@ class IntelConfig:
     grok_timeout: int = 120
     limit_per_source: int = 10
     max_hn_blogs: int = 5
+    gemini_rate_limit_delay: float = 1.5
 
     # === Feature Flags ===
     enable_grok_sentiment: bool = True
@@ -93,3 +94,6 @@ class IntelConfig:
 
 # Singleton instance — import this everywhere
 cfg = IntelConfig.from_env()
+
+# Backward-compatible export for report_generator.py
+GEMINI_RATE_LIMIT_DELAY = cfg.gemini_rate_limit_delay

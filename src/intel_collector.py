@@ -14,8 +14,20 @@ import sys
 import os
 import re
 import time
+import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Lock
+
+# --- Logging Setup ---
+logger = logging.getLogger("intel_collector")
+if not logger.handlers:
+    _handler = logging.StreamHandler(sys.stdout)
+    _handler.setFormatter(logging.Formatter(
+        "%(asctime)s [%(name)s] %(levelname)s: %(message)s",
+        datefmt="%H:%M:%S"
+    ))
+    logger.addHandler(_handler)
+    logger.setLevel(logging.INFO)
 
 # --- Path Setup ---
 LOCAL_SRC_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src')

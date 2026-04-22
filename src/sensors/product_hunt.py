@@ -25,39 +25,14 @@ class PHProduct:
     maker_twitter: Optional[str] = None
     thumbnail_url: Optional[str] = None
 
-def load_ph_token() -> Optional[str]:
-    """Load Product Hunt API token from .env or environment variables."""
-    # CI environments: env vars are set directly
-    env_token = os.getenv("PRODUCTHUNT_TOKEN")
-    if env_token:
-        return env_token
-
-    # Local: Try multiple possible .env locations
-    possible_paths = [
-        os.path.join(os.path.dirname(__file__), "..", "..", ".env"),  # D:\Intel_Briefing\.env
-        os.path.join(os.path.dirname(__file__), "..", ".env"),        # D:\Intel_Briefing\src\.env
-        os.path.join(os.getcwd(), ".env"),                            # Current working dir
-    ]
-    
-    for env_path in possible_paths:
-        if os.path.exists(env_path):
-            with open(env_path, "r", encoding="utf-8-sig") as f:
-                for line in f:
-                    if "PRODUCTHUNT_TOKEN" in line:
-                        parts = line.strip().split("=", 1)
-                        if len(parts) == 2:
-                            token = parts[1].strip().strip('"').strip("'")
-                            if token:
-                                # Start hidden to avoid log spam
-                                # print(f"    (Loaded PH token from {os.path.basename(env_path)})")
-                                return token
-    return None
+# Use unified config layer
+from config import cfg
 
 def fetch_trending_products(limit: int = 10) -> List[PHProduct]:
     """Fetch trending products from Product Hunt."""
     print(f"  → Fetching top {limit} products from Product Hunt...")
     
-    token = load_ph_token()
+    token = cfg.producthunt_token
     
     if token:
         print("    (Using Official API Token)")
