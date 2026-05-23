@@ -181,7 +181,7 @@ pytest tests/ -v      # 33 tests, <1s
 
 ## 🤖 GitHub Actions 自动化
 
-项目自带 `.github/workflows/daily-report.yml`，配置好 Secrets 后每天 UTC 23:51（北京 07:51）自动生成日报并推送到 [intel-briefing-pwa](https://github.com/77AutumN/intel-briefing-pwa) 前端仓库。
+项目自带 `.github/workflows/daily-report.yml`，配置好 Secrets 后每天 UTC 23:51（北京 07:51）自动生成日报并推送到配置好的 PWA 前端仓库。
 
 ---
 
