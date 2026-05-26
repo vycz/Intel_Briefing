@@ -1,64 +1,47 @@
-# 隐私数据和缓存
+# ============================================================
+#  .gitignore —— 公开仓库「收什么 / 不收什么」
+#  规则：被本文件忽略的 = 私人/本地，永不上 GitHub
+#        git 已跟踪的    = 公开，会上 GitHub
+#  查某文件归属： git check-ignore <文件>   （有输出=私人）
+#  完整速查地图： 见根目录 WORKSPACE_MAP.md（也不公开）
+#  注意：gitignore 不支持行内注释，注释必须单独成行。
+# ============================================================
+
+# === 密钥与环境 ===
 .env
 .secrets/
 
-# 生成的报告 (你的私有情报)
+# === 不收：本地运行产物 / 缓存 / 归档 ===
+# 生成的日报（你的私有情报）
 reports/
-
-# 玩家档案 (个人隐私)
-player/
-
-# 任务系统和收入数据 (商业策略)
-quests/
-revenue/
-
-# 商业逻辑配置 (包含个人信息)
-.agent/skills/revenue-architect/prompts/
-
-# Python 缓存
+# 归档的旧杂物
+.archive/
+# pip install -e . 的产物
+intel_briefing.egg-info/
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 .Python
 *.so
+.pytest_cache/
+*.log
 
-# Antigravity 本地状态
-.antigravity/
-
-# 归档
-.archive/
-
-# 系统文件
-.DS_Store
-Thumbs.db
-
-# IDE
-.vscode/
-.idea/
-
-# 临时任务文件
-task.md
-implementation_plan.md
-
-# === 隐私保护：个人策略和偏好 ===
+# === 不收：个人画像与商业策略 ===
+# 你的个人画像（公开版只有 commander_state.example.md）
+prompts/commander_state.md
 AIA_Field_Manual.md
 SKILL.md
+# 玩家档案 / 任务系统 / 收入数据
+player/
+quests/
+revenue/
+.agent/skills/revenue-architect/prompts/
 
-# 个人画像（从 commander_state.example.md 复制后填入真实信息，请勿提交）
-prompts/commander_state.md
-
-# Agent 配置（含个人工作流和策略 prompt）
+# === 不收：Agent / 工具的本地配置 ===
 .agent/
-
-# 临时/调试文件
-temp_*.csv
-debug_*.py
-*.bak
-
-# === 防误提交：本地私有目录与杂物（防止 git add -A 把它们带进公开仓库）===
-# Agent / 工具的本地配置与 IPC 日志
 .agents/
+.antigravity/
 .antigravitycli/
 .claude/
 .claude_ipc/
@@ -66,23 +49,42 @@ debug_*.py
 .gemini_ipc/
 .obsidian/
 
-# 草稿、临时输出、构建产物
-tmp/
-intel_briefing.egg-info/
-*.log
-tmp_recurrence*.txt
-scan_results.json
-ppt_search.json
-w*_summary.json
+# === 不收：内部文档与 AI 上下文 ===
+# 本地 AI 上下文（含私有仓库名/安全债，勿公开）
+GEMINI.md
+# 同类 AI 上下文，预防性忽略（要公开请 git add -f）
+CLAUDE.md
+AGENTS.md
+# 本地工作区速查地图
+WORKSPACE_MAP.md
+# 内部设计稿（要公开可 git add -f）
+docs/decision_action_loop_design.md
+docs/CODEX_*
+docs/HANDOFF_*
+docs/GEMINI_AUDIT_REPORT.md
+docs/MEMORY_BANK_BLUEPRINT.md
 
-# 社交/内容创作草稿（个人/商业策略）
+# === 不收：社交 / 内容创作草稿 ===
 claude_xhs_*
 gemini_xhs_prompt.txt
 article_content.txt
 tweet.json
 
-# 内部评审 / 交接文档（非公开）
-docs/CODEX_*
-docs/HANDOFF_*
-docs/GEMINI_AUDIT_REPORT.md
-docs/MEMORY_BANK_BLUEPRINT.md
+# === 不收：临时 / 调试 / 草稿数据 ===
+tmp/
+temp_*.csv
+debug_*.py
+*.bak
+.mbignore
+tmp_recurrence*.txt
+scan_results.json
+ppt_search.json
+w*_summary.json
+task.md
+implementation_plan.md
+
+# === 系统 / IDE ===
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
