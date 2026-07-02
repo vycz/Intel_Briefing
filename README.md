@@ -169,6 +169,7 @@ export HTTPS_PROXY=http://127.0.0.1:7890
 | `XAI_API_KEY` | Grok API (X/Twitter 舆情 + PH fallback) | 推荐 | 每月 $25 免费额度 ([申请](https://console.x.ai/)) |
 | `PRODUCTHUNT_TOKEN` | Product Hunt 数据 | 可选 | ✅ [免费申请](https://www.producthunt.com/v2/oauth/applications) |
 | `GEMINI_API_KEY` | Google Gemini (中文翻译+摘要) | 可选 | ✅ 免费额度充足 ([申请](https://aistudio.google.com/apikey)) |
+| `DEEPSEEK_API_KEY` | DeepSeek (中文翻译+摘要，设置 `LLM_PROVIDER=deepseek`) | 可选 | [申请](https://platform.deepseek.com/api_keys) |
 
 > ⚠️ **最低要求：拿到 `GITHUB_TOKEN` 就能跑基础日报。** 没有其他 Key 时对应功能会优雅降级（跳过而非崩溃）。Horizon 雷达走公开 RSS，零 Key 即可运行。
 
@@ -233,7 +234,9 @@ Intel_Briefing/
 
 | 变量 | 默认值 | 说明 |
 |:--|:--|:--|
+| `LLM_PROVIDER` | `gemini` | 中文翻译/摘要提供商，可设为 `deepseek` |
 | `GEMINI_MODEL` | `gemini-2.0-flash` | 翻译/摘要用的 Gemini 模型 |
+| `DEEPSEEK_MODEL` | `deepseek-v4-flash` | 翻译/摘要用的 DeepSeek 模型 |
 | `XAI_MODEL` | `x-ai/grok-4-fast` | Grok API 模型 |
 | `FETCH_TIMEOUT` | `15` | 网络请求超时 (秒) |
 | `LIMIT_PER_SOURCE` | `10` | 每个源抓取上限 |

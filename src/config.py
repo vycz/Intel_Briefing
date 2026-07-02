@@ -43,6 +43,9 @@ class IntelConfig:
     github_token: Optional[str] = field(default=None)
     producthunt_token: Optional[str] = field(default=None)
 
+    # === LLM Provider Selection ===
+    llm_provider: str = "gemini"
+
     # === XAI / Grok Configuration ===
     # Aligned with .github/workflows/daily-report.yml actual values
     xai_base_url: str = "https://openrouter.ai/api/v1/chat/completions"
@@ -53,6 +56,11 @@ class IntelConfig:
     gemini_model: str = "gemini-2.0-flash"
     gemini_timeout: int = 60
     gemini_max_retries: int = 3
+
+    # === DeepSeek Configuration (OpenAI-compatible chat completions) ===
+    deepseek_api_key: Optional[str] = field(default=None)
+    deepseek_base_url: str = "https://api.deepseek.com"
+    deepseek_model: str = "deepseek-v4-flash"
 
     # === Jina Reader Configuration ===
     jina_reader_url: str = "https://r.jina.ai/"
@@ -76,9 +84,11 @@ class IntelConfig:
         """Build config from environment variables."""
         return cls(
             gemini_api_key=os.getenv("GEMINI_API_KEY"),
+            deepseek_api_key=os.getenv("DEEPSEEK_API_KEY"),
             xai_api_key=os.getenv("XAI_API_KEY"),
             github_token=os.getenv("GITHUB_TOKEN"),
             producthunt_token=os.getenv("PRODUCTHUNT_TOKEN"),
+            llm_provider=os.getenv("LLM_PROVIDER", "gemini").lower(),
             xai_base_url=os.getenv(
                 "XAI_BASE_URL",
                 "https://openrouter.ai/api/v1/chat/completions",
@@ -91,6 +101,8 @@ class IntelConfig:
             gemini_model=os.getenv("GEMINI_MODEL", "gemini-2.0-flash"),
             gemini_timeout=int(os.getenv("GEMINI_TIMEOUT", "60")),
             gemini_max_retries=int(os.getenv("GEMINI_MAX_RETRIES", "3")),
+            deepseek_base_url=os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com"),
+            deepseek_model=os.getenv("DEEPSEEK_MODEL", "deepseek-v4-flash"),
             jina_reader_url=os.getenv("JINA_READER_URL", "https://r.jina.ai/"),
             jina_timeout=int(os.getenv("JINA_TIMEOUT", "30")),
             jina_max_chars=int(os.getenv("JINA_MAX_CHARS", "15000")),
@@ -110,7 +122,9 @@ class IntelConfig:
             warnings.append("XAI_API_KEY not set — Grok sensor will be disabled")
         if not self.github_token:
             warnings.append("GITHUB_TOKEN not set — GitHub Trending will be disabled")
-        if not self.gemini_api_key:
+        if self.llm_provider == "deepseek" and not self.deepseek_api_key:
+            warnings.append("DEEPSEEK_API_KEY not set — DeepSeek summaries will be disabled")
+        elif self.llm_provider != "deepseek" and not self.gemini_api_key:
             warnings.append("GEMINI_API_KEY not set — report generation will fail")
         return warnings
 
@@ -126,6 +140,10 @@ GEMINI_API_URL = cfg.gemini_api_url
 GEMINI_MODEL = cfg.gemini_model
 GEMINI_TIMEOUT = cfg.gemini_timeout
 GEMINI_MAX_RETRIES = cfg.gemini_max_retries
+LLM_PROVIDER = cfg.llm_provider
+DEEPSEEK_API_KEY = cfg.deepseek_api_key
+DEEPSEEK_BASE_URL = cfg.deepseek_base_url
+DEEPSEEK_MODEL = cfg.deepseek_model
 JINA_READER_URL = cfg.jina_reader_url
 JINA_TIMEOUT = cfg.jina_timeout
 JINA_MAX_CHARS = cfg.jina_max_chars

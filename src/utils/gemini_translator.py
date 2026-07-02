@@ -14,7 +14,79 @@ if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 
 # Import from centralized config
-from src.config import GEMINI_API_KEY, GEMINI_API_URL, GEMINI_MODEL, GEMINI_TIMEOUT, GEMINI_MAX_RETRIES
+from src.config import (
+    DEEPSEEK_API_KEY,
+    DEEPSEEK_BASE_URL,
+    DEEPSEEK_MODEL,
+    GEMINI_API_KEY,
+    GEMINI_API_URL,
+    GEMINI_MAX_RETRIES,
+    GEMINI_MODEL,
+    GEMINI_TIMEOUT,
+    LLM_PROVIDER,
+)
+
+
+def _active_provider() -> str:
+    """Return the configured provider, falling back to Gemini for compatibility."""
+    return (LLM_PROVIDER or "gemini").lower()
+
+
+def _has_llm_key() -> bool:
+    if _active_provider() == "deepseek":
+        return bool(DEEPSEEK_API_KEY)
+    return bool(GEMINI_API_KEY)
+
+
+def _extract_gemini_text(data: dict) -> str:
+    return data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+
+
+def _extract_openai_text(data: dict) -> str:
+    return data.get("choices", [{}])[0].get("message", {}).get("content", "")
+
+
+def _call_llm(prompt: str, max_tokens: int, temperature: float, timeout: int | None = None) -> str:
+    """Call the configured LLM provider and return text, or an empty string."""
+    provider = _active_provider()
+    timeout = timeout or GEMINI_TIMEOUT
+
+    if provider == "deepseek":
+        if not DEEPSEEK_API_KEY:
+            logger.warning("DEEPSEEK_API_KEY 未配置，跳过 LLM 调用")
+            return ""
+
+        url = f"{DEEPSEEK_BASE_URL.rstrip('/')}/chat/completions"
+        payload = {
+            "model": DEEPSEEK_MODEL,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+            "stream": False,
+        }
+        headers = {
+            "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+            "Content-Type": "application/json",
+        }
+        response = httpx.post(url, headers=headers, json=payload, timeout=timeout)
+        response.raise_for_status()
+        return _extract_openai_text(response.json()).strip()
+
+    if not GEMINI_API_KEY:
+        logger.warning("GEMINI_API_KEY 未配置，跳过 LLM 调用")
+        return ""
+
+    url = f"{GEMINI_API_URL}/{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "temperature": temperature,
+            "maxOutputTokens": max_tokens,
+        }
+    }
+    response = httpx.post(url, json=payload, timeout=timeout)
+    response.raise_for_status()
+    return _extract_gemini_text(response.json()).strip()
 
 def translate_to_chinese(text: str, max_chars: int = 100) -> str:
     """
@@ -27,8 +99,8 @@ def translate_to_chinese(text: str, max_chars: int = 100) -> str:
     Returns:
         翻译后的中文文本，如果失败则返回原文
     """
-    if not GEMINI_API_KEY:
-        logger.warning("GEMINI_API_KEY 未配置，跳过翻译")
+    if not _has_llm_key():
+        logger.warning("LLM API Key 未配置，跳过翻译")
         return text[:max_chars] + "..." if len(text) > max_chars else text
     
     if not text or len(text) < 10:
@@ -42,42 +114,25 @@ def translate_to_chinese(text: str, max_chars: int = 100) -> str:
 原文：
 {text}"""
 
-    url = f"{GEMINI_API_URL}/{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
-
-    payload = {
-        "contents": [{
-            "parts": [{"text": prompt}]
-        }],
-        "generationConfig": {
-            "temperature": 0.3,
-            "maxOutputTokens": 1024
-        }
-    }
-
     for attempt in range(GEMINI_MAX_RETRIES):
         try:
-            response = httpx.post(url, json=payload, timeout=GEMINI_TIMEOUT)
-            response.raise_for_status()
-            
-            data = response.json()
-            result = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-            
+            result = _call_llm(prompt, max_tokens=1024, temperature=0.3, timeout=GEMINI_TIMEOUT)
             if result:
-                return result.strip()
+                return result
             else:
                 # API 返回空结果，重试
                 if attempt < GEMINI_MAX_RETRIES - 1:
-                    logger.warning(f"Gemini 返回空结果，重试 ({attempt + 1}/{GEMINI_MAX_RETRIES})...")
+                    logger.warning(f"LLM 返回空结果，重试 ({attempt + 1}/{GEMINI_MAX_RETRIES})...")
                     time.sleep(2 ** attempt)
                     continue
                 return text[:max_chars] + "..." if len(text) > max_chars else text
 
         except (httpx.HTTPError, httpx.TimeoutException, ValueError, KeyError) as e:
             if attempt < GEMINI_MAX_RETRIES - 1:
-                logger.warning(f"Gemini 翻译失败 ({attempt + 1}/{GEMINI_MAX_RETRIES}): {e}")
+                logger.warning(f"LLM 翻译失败 ({attempt + 1}/{GEMINI_MAX_RETRIES}): {e}")
                 time.sleep(2 ** attempt)
                 continue
-            logger.error(f"Gemini 翻译最终失败: {e}")
+            logger.error(f"LLM 翻译最终失败: {e}")
             return text[:max_chars] + "..." if len(text) > max_chars else text
     
     return text[:max_chars] + "..." if len(text) > max_chars else text
@@ -95,7 +150,7 @@ def generate_brief(content: str, category: str = "general") -> str:
     Returns:
         中文摘要（80-120字），失败则返回空字符串
     """
-    if not GEMINI_API_KEY or not content or len(content) < 20:
+    if not _has_llm_key() or not content or len(content) < 20:
         return ""
     
     prompt = f"""你是世界顶级的科技情报编辑。请用2-3句自然流畅的中文概括以下内容（80-120字）。
@@ -111,21 +166,8 @@ def generate_brief(content: str, category: str = "general") -> str:
 内容：
 {content[:3000]}"""
     
-    url = f"{GEMINI_API_URL}/{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
-    payload = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {
-            "temperature": 0.5,
-            "maxOutputTokens": 256
-        }
-    }
-    
     try:
-        response = httpx.post(url, json=payload, timeout=60)
-        response.raise_for_status()
-        data = response.json()
-        result = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-        return result.strip() if result else ""
+        return _call_llm(prompt, max_tokens=256, temperature=0.5, timeout=60)
     except Exception:
         logger.exception("generate_brief 失败")
         return ""
@@ -165,7 +207,7 @@ def summarize_blog_article(content: str, mode: str = "brief") -> str:
     Returns:
         中文摘要
     """
-    if not GEMINI_API_KEY or not content or len(content) < 50:
+    if not _has_llm_key() or not content or len(content) < 50:
         return ""
     
     if mode == "brief":
@@ -196,28 +238,10 @@ def summarize_blog_article(content: str, mode: str = "brief") -> str:
 {content[:6000]}"""
         max_tokens = 1024
     
-    url = f"{GEMINI_API_URL}/{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
-    
-    payload = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {
-            "temperature": 0.4,
-            "maxOutputTokens": max_tokens
-        }
-    }
-    
     try:
-        with httpx.Client(timeout=GEMINI_TIMEOUT) as client:
-            response = client.post(url, json=payload)
-            if response.status_code == 200:
-                data = response.json()
-                result = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-                return result.strip() if result else ""
-            else:
-                logger.warning(f"Gemini 摘要失败: HTTP {response.status_code}")
-                return ""
+        return _call_llm(prompt, max_tokens=max_tokens, temperature=0.4, timeout=GEMINI_TIMEOUT)
     except (httpx.HTTPError, httpx.TimeoutException, ValueError, KeyError) as e:
-        logger.warning(f"Gemini 摘要出错: {e}")
+        logger.warning(f"LLM 摘要出错: {e}")
         return ""
 
 
@@ -237,7 +261,7 @@ def generate_news_brief(title: str, content: str = "", category: str = "tech",
     Returns:
         中文短报（80-120字），失败则返回空字符串
     """
-    if not GEMINI_API_KEY or not title:
+    if not _has_llm_key() or not title:
         return ""
     
     # 无内容时做标题推断
@@ -268,20 +292,8 @@ def generate_news_brief(title: str, content: str = "", category: str = "tech",
 6. 直接输出摘要，不要前缀。"""
         max_tokens = 256
     
-    url = f"{GEMINI_API_URL}/{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
-    payload = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {
-            "temperature": 0.3,
-            "maxOutputTokens": max_tokens
-        }
-    }
-    
     try:
-        response = httpx.post(url, json=payload, timeout=60)
-        response.raise_for_status()
-        data = response.json()
-        result = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+        result = _call_llm(prompt, max_tokens=max_tokens, temperature=0.3, timeout=60)
         
         if not result:
             return ""
@@ -315,7 +327,7 @@ def expand_product_tagline(name: str, tagline: str) -> str:
     Returns:
         中文产品描述（30-60字），失败则返回空字符串
     """
-    if not GEMINI_API_KEY or not name:
+    if not _has_llm_key() or not name:
         return ""
     
     prompt = f"""这是一个新产品：
@@ -324,21 +336,8 @@ def expand_product_tagline(name: str, tagline: str) -> str:
 
 请用一句自然中文描述这个产品的定位和卖点（30-60字）。直接输出，不要前缀。"""
     
-    url = f"{GEMINI_API_URL}/{GEMINI_MODEL}:generateContent?key={GEMINI_API_KEY}"
-    payload = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {
-            "temperature": 0.4,
-            "maxOutputTokens": 128
-        }
-    }
-    
     try:
-        response = httpx.post(url, json=payload, timeout=60)
-        response.raise_for_status()
-        data = response.json()
-        result = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-        return result.strip() if result else ""
+        return _call_llm(prompt, max_tokens=128, temperature=0.4, timeout=60)
     except Exception:
         logger.exception("expand_product_tagline 失败")
         return ""

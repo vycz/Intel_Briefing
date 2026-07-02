@@ -169,6 +169,7 @@ export HTTPS_PROXY=http://127.0.0.1:7890
 | `XAI_API_KEY` | Grok API (X/Twitter buzz + PH fallback) | Recommended | $25/mo free credit ([apply](https://console.x.ai/)) |
 | `PRODUCTHUNT_TOKEN` | Product Hunt data | Optional | ✅ [free](https://www.producthunt.com/v2/oauth/applications) |
 | `GEMINI_API_KEY` | Google Gemini (translation + summary) | Optional | ✅ generous free tier ([apply](https://aistudio.google.com/apikey)) |
+| `DEEPSEEK_API_KEY` | DeepSeek (translation + summary, set `LLM_PROVIDER=deepseek`) | Optional | [apply](https://platform.deepseek.com/api_keys) |
 
 > ⚠️ **Minimum: with just `GITHUB_TOKEN` you can run a basic briefing.** Without the other keys, those features degrade gracefully (skipped, not crashed). Horizon uses public RSS — zero keys needed.
 
@@ -233,7 +234,9 @@ Key settings:
 
 | Variable | Default | Description |
 |:--|:--|:--|
+| `LLM_PROVIDER` | `gemini` | translation/summary provider, set to `deepseek` to use DeepSeek |
 | `GEMINI_MODEL` | `gemini-2.0-flash` | Gemini model for translation/summary |
+| `DEEPSEEK_MODEL` | `deepseek-v4-flash` | DeepSeek model for translation/summary |
 | `XAI_MODEL` | `x-ai/grok-4-fast` | Grok API model |
 | `FETCH_TIMEOUT` | `15` | network request timeout (seconds) |
 | `LIMIT_PER_SOURCE` | `10` | max items fetched per source |

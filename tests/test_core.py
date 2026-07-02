@@ -94,6 +94,42 @@ class TestReportGenerator:
         assert "https://example.com" in report
 
 
+class TestLLMProvider:
+    """测试 LLM provider 适配层。"""
+
+    def test_deepseek_provider_uses_openai_chat_format(self, monkeypatch):
+        from src.utils import gemini_translator as gt
+
+        calls = {}
+
+        class _FakeResp:
+            def raise_for_status(self):
+                pass
+
+            def json(self):
+                return {"choices": [{"message": {"content": "DeepSeek 摘要"}}]}
+
+        def _fake_post(url, headers=None, json=None, timeout=None, **kwargs):
+            calls["url"] = url
+            calls["headers"] = headers
+            calls["json"] = json
+            return _FakeResp()
+
+        monkeypatch.setattr(gt, "LLM_PROVIDER", "deepseek")
+        monkeypatch.setattr(gt, "DEEPSEEK_API_KEY", "fake-deepseek-key")
+        monkeypatch.setattr(gt, "DEEPSEEK_BASE_URL", "https://api.deepseek.com")
+        monkeypatch.setattr(gt, "DEEPSEEK_MODEL", "deepseek-v4-flash")
+        monkeypatch.setattr(gt.httpx, "post", _fake_post)
+
+        result = gt.generate_brief("OpenAI-compatible DeepSeek test content " * 3)
+
+        assert result == "DeepSeek 摘要"
+        assert calls["url"] == "https://api.deepseek.com/chat/completions"
+        assert calls["headers"]["Authorization"] == "Bearer fake-deepseek-key"
+        assert calls["json"]["model"] == "deepseek-v4-flash"
+        assert calls["json"]["messages"][0]["role"] == "user"
+
+
 class TestFetchNewsHelpers:
     """测试 fetch_news 辅助函数。"""
 

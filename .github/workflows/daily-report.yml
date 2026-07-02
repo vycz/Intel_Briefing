@@ -30,7 +30,16 @@ jobs:
           XAI_MODEL: x-ai/grok-4-fast
           PRODUCTHUNT_TOKEN: ${{ secrets.PRODUCTHUNT_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          LLM_PROVIDER: deepseek
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DEEPSEEK_MODEL: deepseek-v4-flash
         run: python cli.py
+
+      - name: Upload report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-report
+          path: reports/daily_briefings/*.md
 
       # Optional: push the generated report to a separate frontend (PWA) repo.
       # Configure repository variable PWA_REPO (e.g. "your-name/your-pwa-repo")
@@ -87,4 +96,3 @@ jobs:
             git push
             echo "✅ Report delivered to ${PWA_REPO}"
           fi
-
