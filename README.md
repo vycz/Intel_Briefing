@@ -237,7 +237,7 @@ Intel_Briefing/
 | `LLM_PROVIDER` | `gemini` | 中文翻译/摘要提供商，可设为 `deepseek` |
 | `GEMINI_MODEL` | `gemini-2.0-flash` | 翻译/摘要用的 Gemini 模型 |
 | `DEEPSEEK_MODEL` | `deepseek-v4-flash` | 翻译/摘要用的 DeepSeek 模型 |
-| `XAI_MODEL` | `x-ai/grok-4-fast` | Grok API 模型 |
+| `XAI_MODEL` | `x-ai/grok-4.3` | Grok API 模型 |
 | `FETCH_TIMEOUT` | `15` | 网络请求超时 (秒) |
 | `LIMIT_PER_SOURCE` | `10` | 每个源抓取上限 |
 | `CONTENT_TRUNCATE_LIMIT` | `3000` | 内容截断字符数 |

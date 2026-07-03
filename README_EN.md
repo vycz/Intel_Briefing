@@ -237,7 +237,7 @@ Key settings:
 | `LLM_PROVIDER` | `gemini` | translation/summary provider, set to `deepseek` to use DeepSeek |
 | `GEMINI_MODEL` | `gemini-2.0-flash` | Gemini model for translation/summary |
 | `DEEPSEEK_MODEL` | `deepseek-v4-flash` | DeepSeek model for translation/summary |
-| `XAI_MODEL` | `x-ai/grok-4-fast` | Grok API model |
+| `XAI_MODEL` | `x-ai/grok-4.3` | Grok API model |
 | `FETCH_TIMEOUT` | `15` | network request timeout (seconds) |
 | `LIMIT_PER_SOURCE` | `10` | max items fetched per source |
 | `CONTENT_TRUNCATE_LIMIT` | `3000` | content truncation length (chars) |
