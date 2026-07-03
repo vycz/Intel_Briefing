@@ -93,6 +93,25 @@ class TestReportGenerator:
         assert "V2EX Topic" in report
         assert "https://example.com" in report
 
+    def test_balanced_items_interleaves_preferred_sources(self):
+        from src.report_generator import _balanced_items
+
+        items = (
+            [{"title": f"WS {i}", "category": "WallStreetCN"} for i in range(10)] +
+            [{"title": f"36Kr {i}", "category": "36Kr"} for i in range(10)]
+        )
+
+        result = _balanced_items(items, ["36Kr", "WallStreetCN"], 6)
+
+        assert [item["category"] for item in result] == [
+            "36Kr",
+            "WallStreetCN",
+            "36Kr",
+            "WallStreetCN",
+            "36Kr",
+            "WallStreetCN",
+        ]
+
 
 class TestLLMProvider:
     """测试 LLM provider 适配层。"""

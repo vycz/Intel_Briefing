@@ -15,7 +15,12 @@ from src.config import GEMINI_RATE_LIMIT_DELAY
 
 # --- Gemini Translator ---
 try:
-    from src.utils.gemini_translator import translate_to_chinese, summarize_blog_article, generate_brief
+    from src.utils.gemini_translator import (
+        translate_to_chinese,
+        summarize_blog_article,
+        generate_brief,
+        generate_news_brief,
+    )
     GEMINI_AVAILABLE = True
 except ImportError:
     GEMINI_AVAILABLE = False
@@ -39,6 +44,39 @@ if not GEMINI_AVAILABLE:
     def generate_brief(content, category="general"):
         return ""
 
+    def generate_news_brief(title, content="", category="tech", _depth=0):
+        return ""
+
+
+def _balanced_items(items: list[dict], preferred_categories: list[str], limit: int) -> list[dict]:
+    """Return a source-balanced list instead of letting async completion order dominate."""
+    grouped = {category: [] for category in preferred_categories}
+    extras = []
+
+    for item in items:
+        category = item.get("category", "")
+        if category in grouped:
+            grouped[category].append(item)
+        else:
+            extras.append(item)
+
+    result = []
+    while len(result) < limit:
+        added = False
+        for category in preferred_categories:
+            if grouped[category]:
+                result.append(grouped[category].pop(0))
+                added = True
+                if len(result) >= limit:
+                    break
+        if not added:
+            break
+
+    if len(result) < limit:
+        result.extend(extras[: limit - len(result)])
+
+    return result[:limit]
+
 
 def generate_report(intel: dict, date_str: str) -> str:
     """Generate magazine-style markdown report."""
@@ -54,17 +92,27 @@ def generate_report(intel: dict, date_str: str) -> str:
 
     # --- Tech Trends ---
     lines.append("## 🛠️ 技术趋势 (Tech Trends)")
-    lines.append("> Hacker News + GitHub Trending\n")
+    lines.append("> Hacker News + GitHub Trending + TechCrunch\n")
 
     if intel.get("tech_trends"):
-        for i, item in enumerate(intel["tech_trends"][:10], 1):
+        tech_items = _balanced_items(
+            intel["tech_trends"],
+            ["Hacker News", "GitHub", "TechCrunch"],
+            10,
+        )
+        for i, item in enumerate(tech_items, 1):
             title = item.get("title", "Untitled")
             url = item.get("url", "#")
             heat = item.get("heat", "")
             time_str = item.get("time", "")
             cat = item.get("category", "")
+            detail = item.get("detail", "") or item.get("content", "")
+            source_text = detail or title
+            brief_cn = generate_news_brief(title, source_text, category="tech")
 
             lines.append(f"### {i}. [{title}]({url})")
+            if brief_cn:
+                lines.append(f"> ⚡ {brief_cn}")
             lines.append(f"📍 {cat} | 🔥 {heat} | 🕒 {time_str}")
             lines.append("")
     else:
@@ -75,7 +123,12 @@ def generate_report(intel: dict, date_str: str) -> str:
     lines.append("> 36Kr + 华尔街见闻\n")
 
     if intel.get("capital_flow"):
-        for i, item in enumerate(intel["capital_flow"][:10], 1):
+        capital_items = _balanced_items(
+            intel["capital_flow"],
+            ["36Kr", "WallStreetCN"],
+            10,
+        )
+        for i, item in enumerate(capital_items, 1):
             title = item.get("title", "Untitled")
             url = item.get("url", "#")
             time_str = item.get("time", "")
