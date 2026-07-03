@@ -47,11 +47,12 @@ jobs:
       # so forks without a PWA frontend won't fail here.
       - name: Deliver report to PWA (optional)
         env:
+          PWA_DEPLOY_KEY: ${{ secrets.PWA_DEPLOY_KEY }}
           PWA_DEPLOY_TOKEN: ${{ secrets.PWA_DEPLOY_TOKEN }}
           PWA_REPO: ${{ vars.PWA_REPO }}
         run: |
-          if [ -z "$PWA_DEPLOY_TOKEN" ] || [ -z "$PWA_REPO" ]; then
-            echo "ℹ️ PWA delivery skipped (set PWA_REPO variable and PWA_DEPLOY_TOKEN secret to enable)."
+          if [ -z "$PWA_REPO" ] || { [ -z "$PWA_DEPLOY_TOKEN" ] && [ -z "$PWA_DEPLOY_KEY" ]; }; then
+            echo "ℹ️ PWA delivery skipped (set PWA_REPO variable and either PWA_DEPLOY_KEY or PWA_DEPLOY_TOKEN secret to enable)."
             exit 0
           fi
 
@@ -67,7 +68,17 @@ jobs:
 
           echo "📄 Report found: $(wc -c < "$REPORT") bytes"
 
-          git clone https://x-access-token:${PWA_DEPLOY_TOKEN}@github.com/${PWA_REPO}.git /tmp/pwa
+          if [ -n "$PWA_DEPLOY_KEY" ]; then
+            mkdir -p ~/.ssh
+            printf '%s\n' "$PWA_DEPLOY_KEY" > ~/.ssh/pwa_deploy_key
+            chmod 600 ~/.ssh/pwa_deploy_key
+            ssh-keyscan github.com >> ~/.ssh/known_hosts
+            GIT_SSH_COMMAND="ssh -i ~/.ssh/pwa_deploy_key -o IdentitiesOnly=yes" \
+              git clone git@github.com:${PWA_REPO}.git /tmp/pwa
+          else
+            git clone https://x-access-token:${PWA_DEPLOY_TOKEN}@github.com/${PWA_REPO}.git /tmp/pwa
+          fi
+
           cp "$REPORT" /tmp/pwa/data/daily_briefings/
 
           # Copy pre-generated summaries if available
@@ -93,6 +104,10 @@ jobs:
             echo "✅ No changes to commit"
           else
             git commit -m "data: add daily report ${DATE}"
-            git push
+            if [ -n "$PWA_DEPLOY_KEY" ]; then
+              GIT_SSH_COMMAND="ssh -i ~/.ssh/pwa_deploy_key -o IdentitiesOnly=yes" git push
+            else
+              git push
+            fi
             echo "✅ Report delivered to ${PWA_REPO}"
           fi
